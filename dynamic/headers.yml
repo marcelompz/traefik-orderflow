@@ -1,0 +1,46 @@
+# Middlewares compartidos (seguridad). Se referencian desde los routers con:
+#   middlewares:
+#     - secure-headers
+http:
+  middlewares:
+    secure-headers:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        # CSP por defecto: restrictivo pero permite recursos propios, estilos inline
+        # (muchos frameworks lo necesitan), y Cloudflare Insights.
+        contentSecurityPolicy: >-
+          default-src 'self';
+          script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com;
+          style-src 'self' 'unsafe-inline';
+          img-src 'self' data: https:;
+          font-src 'self' data: https://fonts.gstatic.com;
+          connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com;
+          frame-ancestors 'self';
+          base-uri 'self';
+          form-action 'self'
+
+    # Middleware para servicios que envían su propio CSP restrictivo desde el backend.
+    # Sobreescribe el header CSP del upstream con uno compatible con Cloudflare.
+    secure-headers-cloudflare:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        customResponseHeaders:
+          # Sobreescribe cualquier CSP que venga del contenedor/backend.
+          Content-Security-Policy: >-
+            default-src 'self';
+            script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com;
+            style-src 'self' 'unsafe-inline';
+            img-src 'self' data: https:;
+            font-src 'self' data: https://fonts.gstatic.com;
+            connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com;
+            frame-ancestors 'self';
+            base-uri 'self';
+            form-action 'self'

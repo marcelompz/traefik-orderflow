@@ -1,0 +1,147 @@
+# Enrutamiento de todos los ecosistemas hacia los contenedores por nombre
+# (resolución DNS interna de Docker sobre la red traefik-public).
+#
+# Por cada host se definen DOS routers:
+#   - uno en websecure (TLS, Let's Encrypt) para HTTPS directo al origen
+#   - uno en web (sin TLS) para HTTP directo al origen
+# Un router con `tls` SOLO se sirve en entrypoints TLS; por eso el HTTP
+# necesita su propio router sin `tls`.
+#
+# Contenedores destino deben estar conectados a la red traefik-public:
+#   docker network connect traefik-public <container>
+
+http:
+  routers:
+    # ===================== AXON PROD =====================
+    axon-prod:
+      rule: "Host(`axon.pesallaccia.com`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: axon-prod
+      middlewares: [secure-headers]
+    axon-prod-http:
+      rule: "Host(`axon.pesallaccia.com`)"
+      entryPoints: [web]
+      service: axon-prod
+      middlewares: [secure-headers]
+
+    # ===================== AXON STAGING =====================
+    axon-staging:
+      rule: "Host(`staging.axon.pesallaccia.com`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: axon-staging
+      middlewares: [secure-headers]
+    axon-staging-http:
+      rule: "Host(`staging.axon.pesallaccia.com`)"
+      entryPoints: [web]
+      service: axon-staging
+      middlewares: [secure-headers]
+
+    # ===================== ORDERFLOW PROD =====================
+    orderflow-prod:
+      rule: "Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: orderflow-prod-frontend
+      middlewares: [secure-headers-cloudflare]
+    orderflow-prod-http:
+      rule: "Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`)"
+      entryPoints: [web]
+      service: orderflow-prod-frontend
+      middlewares: [secure-headers-cloudflare]
+    orderflow-prod-api:
+      rule: "Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`) && PathPrefix(`/api`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: orderflow-prod-backend
+    orderflow-prod-api-http:
+      rule: "Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`) && PathPrefix(`/api`)"
+      entryPoints: [web]
+      service: orderflow-prod-backend
+    orderflow-prod-webhook:
+      rule: "Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`) && PathPrefix(`/webhook`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: orderflow-prod-odoo
+    orderflow-prod-webhook-http:
+      rule: "Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`) && PathPrefix(`/webhook`)"
+      entryPoints: [web]
+      service: orderflow-prod-odoo
+
+    # ===================== ORDERFLOW STAGING =====================
+    orderflow-staging:
+      rule: "Host(`staging.provecchio.com`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: orderflow-staging-frontend
+      middlewares: [secure-headers]
+    orderflow-staging-http:
+      rule: "Host(`staging.provecchio.com`)"
+      entryPoints: [web]
+      service: orderflow-staging-frontend
+      middlewares: [secure-headers]
+
+    # ===================== AIER STAGING =====================
+    aieer-staging:
+      rule: "Host(`staging.aieer.pesallaccia.com`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: aieer-staging-frontend
+      middlewares: [secure-headers]
+    aieer-staging-http:
+      rule: "Host(`staging.aieer.pesallaccia.com`)"
+      entryPoints: [web]
+      service: aieer-staging-frontend
+      middlewares: [secure-headers]
+    aieer-staging-api:
+      rule: "Host(`staging.aieer.pesallaccia.com`) && PathPrefix(`/api`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: aieer-staging-backend
+    aieer-staging-api-http:
+      rule: "Host(`staging.aieer.pesallaccia.com`) && PathPrefix(`/api`)"
+      entryPoints: [web]
+      service: aieer-staging-backend
+
+  services:
+    axon-prod:
+      loadBalancer:
+        servers:
+          - url: "http://axon-production-workspace-1:3005"
+    axon-staging:
+      loadBalancer:
+        servers:
+          - url: "http://axon-staging-workspace-1:3005"
+    orderflow-prod-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://orderflow-frontend-prod:80"
+    orderflow-prod-backend:
+      loadBalancer:
+        servers:
+          - url: "http://orderflow-backend-prod:3010"
+    orderflow-prod-odoo:
+      loadBalancer:
+        servers:
+          - url: "http://orderflow-odoo-adapter-prod:3005"
+    orderflow-staging-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://orderflow_frontend:80"
+    aieer-staging-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://staging_frontend:80"
+    aieer-staging-backend:
+      loadBalancer:
+        servers:
+          - url: "http://staging_backend:8000"

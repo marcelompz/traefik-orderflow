@@ -1,0 +1,37 @@
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+api:
+  dashboard: true
+  insecure: true
+
+log:
+  level: INFO
+
+entryPoints:
+  traefik:
+    address: ":8080"
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+providers:
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "admin@pesallaccia.com"
+      storage: /letsencrypt/acme.json
+      # Staging por defecto (evita rate limits de LE mientras validamos).
+      # Producción: https://acme-v02.api.letsencrypt.org/directory
+      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+      # DNS-01 con Cloudflare: funciona con Cloudflare en modo proxy (orange cloud).
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"

@@ -1,0 +1,29 @@
+services:
+  traefik:
+    build: .
+    image: traefik-ingress:local
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - ACME_EMAIL=${ACME_EMAIL}
+      - ACME_CASERVER=${ACME_CASERVER:-https://acme-staging-v02.api.letsencrypt.org/directory}
+      # Requerido para el DNS-01 challenge de Cloudflare:
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./dynamic:/etc/traefik/dynamic:ro
+      - ./acme.json:/letsencrypt/acme.json
+    networks:
+      - traefik-public
+
+networks:
+  traefik-public:
+    name: traefik-public
+    driver: bridge
+    external: true
