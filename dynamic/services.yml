@@ -54,23 +54,23 @@ http:
       service: orderflow-prod-frontend
       middlewares: [secure-headers-cloudflare]
     orderflow-prod-api:
-      rule: "Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`) && PathPrefix(`/api`)"
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`)) && PathPrefix(`/api`)"
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
       service: orderflow-prod-backend
     orderflow-prod-api-http:
-      rule: "Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`) && PathPrefix(`/api`)"
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`)) && PathPrefix(`/api`)"
       entryPoints: [web]
       service: orderflow-prod-backend
     orderflow-prod-webhook:
-      rule: "Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`) && PathPrefix(`/webhook`)"
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`)) && PathPrefix(`/webhook`)"
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
       service: orderflow-prod-odoo
     orderflow-prod-webhook-http:
-      rule: "Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`) && PathPrefix(`/webhook`)"
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`)) && PathPrefix(`/webhook`)"
       entryPoints: [web]
       service: orderflow-prod-odoo
 
