@@ -42,48 +42,72 @@ http:
 
     # ===================== ORDERFLOW PROD =====================
     orderflow-prod:
-      rule: "Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`)"
+      rule: "Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)"
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
       service: orderflow-prod-frontend
       middlewares: [secure-headers-cloudflare]
     orderflow-prod-http:
-      rule: "Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`)"
+      rule: "Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)"
       entryPoints: [web]
       service: orderflow-prod-frontend
       middlewares: [secure-headers-cloudflare]
     orderflow-prod-api:
-      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`)) && PathPrefix(`/api`)"
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/api`)"
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
       service: orderflow-prod-backend
     orderflow-prod-api-http:
-      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`)) && PathPrefix(`/api`)"
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/api`)"
       entryPoints: [web]
       service: orderflow-prod-backend
     orderflow-prod-webhook:
-      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`)) && PathPrefix(`/webhook`)"
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/webhook`)"
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
       service: orderflow-prod-odoo
     orderflow-prod-webhook-http:
-      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`provecchio.com`)) && PathPrefix(`/webhook`)"
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/webhook`)"
       entryPoints: [web]
       service: orderflow-prod-odoo
 
     # ===================== ORDERFLOW STAGING =====================
     orderflow-staging:
-      rule: "Host(`staging.provecchio.com`)"
+      rule: "Host(`staging.pesallaccia.com`)"
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
       service: orderflow-staging-frontend
       middlewares: [secure-headers]
     orderflow-staging-http:
-      rule: "Host(`staging.provecchio.com`)"
+      rule: "Host(`staging.pesallaccia.com`)"
+      entryPoints: [web]
+      service: orderflow-staging-frontend
+      middlewares: [secure-headers]
+    orderflow-staging-api:
+      rule: "Host(`staging.pesallaccia.com`) && PathPrefix(`/api`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: orderflow-staging-backend
+    orderflow-staging-api-http:
+      rule: "Host(`staging.pesallaccia.com`) && PathPrefix(`/api`)"
+      entryPoints: [web]
+      service: orderflow-staging-backend
+
+    # ===================== TENANT SUBDOMAINS =====================
+    tenant-storefront:
+      rule: "HostRegexp(`{subdomain:.+}.pesallaccia.com`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: orderflow-staging-frontend
+      middlewares: [secure-headers]
+    tenant-storefront-http:
+      rule: "HostRegexp(`{subdomain:.+}.pesallaccia.com`)"
       entryPoints: [web]
       service: orderflow-staging-frontend
       middlewares: [secure-headers]
@@ -113,14 +137,6 @@ http:
       service: aieer-staging-backend
 
   services:
-    axon-prod:
-      loadBalancer:
-        servers:
-          - url: "http://axon-production-workspace-1:3005"
-    axon-staging:
-      loadBalancer:
-        servers:
-          - url: "http://axon-staging-workspace-1:3005"
     orderflow-prod-frontend:
       loadBalancer:
         servers:
@@ -136,7 +152,19 @@ http:
     orderflow-staging-frontend:
       loadBalancer:
         servers:
-          - url: "http://orderflow_frontend:80"
+          - url: "http://orderflow-frontend-prod:80"
+    orderflow-staging-backend:
+      loadBalancer:
+        servers:
+          - url: "http://orderflow-backend-prod:3010"
+    axon-prod:
+      loadBalancer:
+        servers:
+          - url: "http://axon-production-workspace-1:3005"
+    axon-staging:
+      loadBalancer:
+        servers:
+          - url: "http://axon-staging-workspace-1:3005"
     aieer-staging-frontend:
       loadBalancer:
         servers:

@@ -29,7 +29,7 @@ certificatesResolvers:
       storage: /letsencrypt/acme.json
       # Staging por defecto (evita rate limits de LE mientras validamos).
       # Producción: https://acme-v02.api.letsencrypt.org/directory
-      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+      caServer: "https://acme-v02.api.letsencrypt.org/directory"
       # DNS-01 con Cloudflare: funciona con Cloudflare en modo proxy (orange cloud).
       dnsChallenge:
         provider: cloudflare
