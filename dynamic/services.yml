@@ -43,6 +43,7 @@ http:
     # ===================== ORDERFLOW PROD =====================
     orderflow-prod:
       rule: "Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)"
+      priority: 100
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
@@ -50,17 +51,20 @@ http:
       middlewares: [secure-headers-cloudflare]
     orderflow-prod-http:
       rule: "Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)"
+      priority: 100
       entryPoints: [web]
       service: orderflow-prod-frontend
       middlewares: [secure-headers-cloudflare]
     orderflow-prod-api:
       rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/api`)"
+      priority: 110
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
       service: orderflow-prod-backend
     orderflow-prod-api-http:
       rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/api`)"
+      priority: 110
       entryPoints: [web]
       service: orderflow-prod-backend
     orderflow-prod-webhook:
