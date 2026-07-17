@@ -102,9 +102,25 @@ http:
       entryPoints: [web]
       service: orderflow-staging-backend
 
+    # ===================== ODOO 19 PROD =====================
+    odoo-prod:
+      rule: "Host(`odoo.pesallaccia.com`)"
+      priority: 100
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: odoo-19-ce
+      middlewares: [secure-headers]
+    odoo-prod-http:
+      rule: "Host(`odoo.pesallaccia.com`)"
+      priority: 100
+      entryPoints: [web]
+      service: odoo-19-ce
+      middlewares: [secure-headers]
+
     # ===================== TENANT SUBDOMAINS =====================
     tenant-storefront:
-      rule: "HostRegexp(`{subdomain:[a-zA-Z0-9-]+}.pesallaccia.com`) && !Host(`orderflow.pesallaccia.com`, `pesallaccia.com`, `api.pesallaccia.com`, `staging.pesallaccia.com`, `axon.pesallaccia.com`, `staging.axon.pesallaccia.com`)"
+      rule: "HostRegexp(`{subdomain:[a-zA-Z0-9-]+}.pesallaccia.com`) && !Host(`orderflow.pesallaccia.com`, `pesallaccia.com`, `api.pesallaccia.com`, `staging.pesallaccia.com`, `axon.pesallaccia.com`, `staging.axon.pesallaccia.com`, `odoo.pesallaccia.com`)"
       priority: 50
       entryPoints: [websecure]
       tls:
@@ -112,7 +128,7 @@ http:
       service: orderflow-staging-frontend
       middlewares: [secure-headers]
     tenant-storefront-http:
-      rule: "HostRegexp(`{subdomain:[a-zA-Z0-9-]+}.pesallaccia.com`) && !Host(`orderflow.pesallaccia.com`, `pesallaccia.com`, `api.pesallaccia.com`, `staging.pesallaccia.com`, `axon.pesallaccia.com`, `staging.axon.pesallaccia.com`)"
+      rule: "HostRegexp(`{subdomain:[a-zA-Z0-9-]+}.pesallaccia.com`) && !Host(`orderflow.pesallaccia.com`, `pesallaccia.com`, `api.pesallaccia.com`, `staging.pesallaccia.com`, `axon.pesallaccia.com`, `staging.axon.pesallaccia.com`, `odoo.pesallaccia.com`)"
       priority: 50
       entryPoints: [web]
       service: orderflow-staging-frontend
@@ -143,6 +159,10 @@ http:
       service: aieer-staging-backend
 
   services:
+    odoo-19-ce:
+      loadBalancer:
+        servers:
+          - url: "http://odoo_web_8084:8069"
     orderflow-prod-frontend:
       loadBalancer:
         servers:
