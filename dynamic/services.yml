@@ -120,7 +120,7 @@ http:
 
     # ===================== TENANT SUBDOMAINS =====================
     tenant-storefront:
-      rule: "HostRegexp(`{subdomain:[a-zA-Z0-9-]+}.pesallaccia.com`) && !Host(`orderflow.pesallaccia.com`, `pesallaccia.com`, `api.pesallaccia.com`, `staging.pesallaccia.com`, `axon.pesallaccia.com`, `staging.axon.pesallaccia.com`, `odoo.pesallaccia.com`)"
+      rule: "HostRegexp(`{subdomain:[a-zA-Z0-9-]+}.pesallaccia.com`) && !Host(`orderflow.pesallaccia.com`) && !Host(`pesallaccia.com`) && !Host(`api.pesallaccia.com`) && !Host(`staging.pesallaccia.com`) && !Host(`axon.pesallaccia.com`) && !Host(`staging.axon.pesallaccia.com`) && !Host(`odoo.pesallaccia.com`)"
       priority: 50
       entryPoints: [websecure]
       tls:
@@ -128,7 +128,7 @@ http:
       service: orderflow-staging-frontend
       middlewares: [secure-headers]
     tenant-storefront-http:
-      rule: "HostRegexp(`{subdomain:[a-zA-Z0-9-]+}.pesallaccia.com`) && !Host(`orderflow.pesallaccia.com`, `pesallaccia.com`, `api.pesallaccia.com`, `staging.pesallaccia.com`, `axon.pesallaccia.com`, `staging.axon.pesallaccia.com`, `odoo.pesallaccia.com`)"
+      rule: "HostRegexp(`{subdomain:[a-zA-Z0-9-]+}.pesallaccia.com`) && !Host(`orderflow.pesallaccia.com`) && !Host(`pesallaccia.com`) && !Host(`api.pesallaccia.com`) && !Host(`staging.pesallaccia.com`) && !Host(`axon.pesallaccia.com`) && !Host(`staging.axon.pesallaccia.com`) && !Host(`odoo.pesallaccia.com`)"
       priority: 50
       entryPoints: [web]
       service: orderflow-staging-frontend
