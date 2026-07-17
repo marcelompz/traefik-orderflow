@@ -104,14 +104,16 @@ http:
 
     # ===================== TENANT SUBDOMAINS =====================
     tenant-storefront:
-      rule: "HostRegexp(`{subdomain:.+}.pesallaccia.com`)"
+      rule: "HostRegexp(`{subdomain:[a-zA-Z0-9-]+}.pesallaccia.com`) && !Host(`orderflow.pesallaccia.com`, `pesallaccia.com`, `api.pesallaccia.com`, `staging.pesallaccia.com`, `axon.pesallaccia.com`, `staging.axon.pesallaccia.com`)"
+      priority: 50
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
       service: orderflow-staging-frontend
       middlewares: [secure-headers]
     tenant-storefront-http:
-      rule: "HostRegexp(`{subdomain:.+}.pesallaccia.com`)"
+      rule: "HostRegexp(`{subdomain:[a-zA-Z0-9-]+}.pesallaccia.com`) && !Host(`orderflow.pesallaccia.com`, `pesallaccia.com`, `api.pesallaccia.com`, `staging.pesallaccia.com`, `axon.pesallaccia.com`, `staging.axon.pesallaccia.com`)"
+      priority: 50
       entryPoints: [web]
       service: orderflow-staging-frontend
       middlewares: [secure-headers]
