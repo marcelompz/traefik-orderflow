@@ -33,6 +33,11 @@ http:
         stsIncludeSubdomains: true
         stsPreload: true
         customResponseHeaders:
+          Cache-Control: "no-cache, no-store, must-revalidate, max-age=0"
+          Pragma: "no-cache"
+          Expires: "0"
+          CDN-Cache-Control: "no-store"
+          Cloudflare-CDN-Cache-Control: "no-store"
           # Sobreescribe cualquier CSP que venga del contenedor/backend.
           Content-Security-Policy: >-
             default-src 'self';
