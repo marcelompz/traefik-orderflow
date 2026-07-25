@@ -134,6 +134,33 @@ http:
       service: orderflow-staging-frontend
       middlewares: [secure-headers]
 
+    # ===================== STANDALONE MICROSERVICES =====================
+    giveaways-standalone:
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/standalone/giveaways`)"
+      priority: 120
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: giveaways-standalone-svc
+    giveaways-standalone-http:
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/standalone/giveaways`)"
+      priority: 120
+      entryPoints: [web]
+      service: giveaways-standalone-svc
+
+    whatsapp-catalog-standalone:
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/standalone/whatsapp-catalog`)"
+      priority: 120
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: whatsapp-catalog-standalone-svc
+    whatsapp-catalog-standalone-http:
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/standalone/whatsapp-catalog`)"
+      priority: 120
+      entryPoints: [web]
+      service: whatsapp-catalog-standalone-svc
+
     # ===================== AIER STAGING =====================
     aieer-staging:
       rule: "Host(`staging.aieer.pesallaccia.com`)"
@@ -159,6 +186,14 @@ http:
       service: aieer-staging-backend
 
   services:
+    giveaways-standalone-svc:
+      loadBalancer:
+        servers:
+          - url: "http://orderflow_giveaways_standalone:3020"
+    whatsapp-catalog-standalone-svc:
+      loadBalancer:
+        servers:
+          - url: "http://orderflow_whatsapp_catalog_standalone:3021"
     odoo-19-ce:
       loadBalancer:
         servers:
