@@ -40,9 +40,20 @@ http:
       service: axon-staging
       middlewares: [secure-headers]
 
+
+    # ===================== GRAFANA =====================
+    grafana:
+      rule: "Host(`grafana.pesallaccia.com`)"
+      priority: 110
+      entryPoints: [web, websecure]
+      tls:
+        certResolver: letsencrypt
+      service: orderflow-grafana
+      middlewares: [secure-headers]
+
     # ===================== ORDERFLOW PROD =====================
     orderflow-prod:
-      rule: "Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)"
+      rule: "Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`) || Host(`wellness.pesallaccia.com`) || Host(`spa-wellness.pesallaccia.com`)"
       priority: 100
       entryPoints: [websecure]
       tls:
@@ -50,7 +61,7 @@ http:
       service: orderflow-prod-frontend
       middlewares: [secure-headers-cloudflare]
     orderflow-prod-http:
-      rule: "Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)"
+      rule: "Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`) || Host(`wellness.pesallaccia.com`) || Host(`spa-wellness.pesallaccia.com`)"
       priority: 100
       entryPoints: [web]
       service: orderflow-prod-frontend
@@ -199,3 +210,9 @@ http:
       loadBalancer:
         servers:
           - url: "http://staging_backend:8000"
+
+
+    orderflow-grafana:
+      loadBalancer:
+        servers:
+          - url: "http://orderflow-grafana:3000"
