@@ -1,0 +1,715 @@
+// OrderFlow Database Schema
+// Multi-tenant Order Management System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// TENANT - Empresa/Cliente del SaaS
+// ============================================
+model Tenant {
+  id                          String   @id @default(uuid())
+  name                        String
+  businessName                String?  // Razón social
+  taxId                       String?  // RUC/NIT/CIF
+  webhookOrderConfirmedUrl    String?  // URL externa donde se envían los pedidos confirmados
+  apiKeySecret                String   @unique // API Key para autenticación
+  active                      Boolean  @default(true)
+  
+  // Configuración de branding
+  logoUrl                     String?  // URL del logo
+  primaryColor                String?  @default("#1890ff") // Color principal
+  secondaryColor              String?  @default("#52c41a") // Color secundario
+  
+  // Configuración del negocio
+  industry                    String?  // spa, retail, automotive, etc.
+  currency                    String   @default("PYG")
+  taxRateDefault              Decimal  @db.Decimal(5, 2) @default(10) // Impuesto por defecto (%)
+  
+  // Configuración de e-commerce
+  ecommerceEnabled            Boolean  @default(false)
+  ecommerceUrl                String?  // URL de la tienda pública
+  allowGuestCheckout          Boolean  @default(true)
+  
+  // Configuración de subdominio público
+  subdomain                   String?  @unique // Subdominio público (ej: gaia-spa-wellness)
+  subdomainVerified           Boolean  @default(false)
+  
+  // Configuración de bookings
+  bookingsEnabled             Boolean  @default(false)
+
+  // Configuración de sesión y seguridad
+  sessionConfig               Json?    // { accessTokenExpiresIn: '1h', refreshTokenExpiresIn: '7d' }
+
+  // Metadata para campos personalizados por rubro
+  config                      Json?    // Configuración específica del rubro
+  
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  // Relaciones
+  products                    Product[]
+  customers                   Customer[]
+  orders                      Order[]
+  resources                   Resource[]
+  usersWithDefault            User[]             @relation("DefaultTenant")
+  userAccess                  UserTenantAccess[]
+  integrations                Integration[]
+  contacts                    Contact[]
+  contactRoles                ContactRole[]
+  moduleInstallations         ModuleInstallation[]
+  giveaways                   Giveaway[]
+
+  @@index([apiKeySecret])
+  @@map("tenants")
+}
+
+// ============================================
+// PRODUCT - Catálogo Universal Multi-Rubro
+// ============================================
+model Product {
+  id                String   @id @default(uuid())
+  tenantId          String
+  skuInterno        String
+  skuOriginalOem    String?  // Opcional, usado en repuestos
+  name              String
+  description       String?
+  costPrice         Decimal  @db.Decimal(15, 2) @default(0) // Costo de compra
+  price             Decimal  @db.Decimal(15, 2) // Precio de venta
+  taxRatePurchase   Decimal  @db.Decimal(5, 2) @default(0) // Impuesto de compra (%)
+  taxRateSale       Decimal  @db.Decimal(5, 2) @default(0) // Impuesto de venta (%)
+  currency          String   @default("PYG")
+  stockAvailable    Int      @default(0)
+  imagesUrls        String[] // Array de URLs de imágenes
+  category          String?
+  metadata          Json?    // Flexibilidad total por rubro (JSONB)
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relaciones
+  tenant            Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  service           Service?   // Relación 1:1 opcional con Service
+  orderLines        OrderLine[]
+
+  @@unique([tenantId, skuInterno])
+  @@index([tenantId])
+  @@index([tenantId, category])
+  @@index([tenantId, skuInterno])
+  @@map("products")
+}
+
+// ============================================
+// CUSTOMER - Base de Clientes
+// ============================================
+model Customer {
+  id          String   @id @default(uuid())
+  tenantId    String
+  taxId       String?  // RUC / Cédula / NIT
+  name        String
+  phone       String?
+  email       String?
+  metadata    Json?    // Datos adicionales del cliente
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders      Order[]
+
+  @@unique([tenantId, taxId])
+  @@index([tenantId])
+  @@index([tenantId, phone])
+  @@index([tenantId, taxId])
+  @@map("customers")
+}
+
+// ============================================
+// GLOBAL DIRECTORY - Base de datos colectiva (Crowdsourcing)
+// ============================================
+model GlobalDirectory {
+  taxId       String   @id // RUC / Cédula, es la llave principal
+  name        String?
+  phone       String?
+  email       String?
+  city        String?
+  street      String?
+  updatedAt   DateTime @updatedAt
+  
+  @@map("global_directory")
+}
+
+
+// ============================================
+// CONTACT - Modelo unificado de contactos (tipo Odoo res.partner)
+// ============================================
+model Contact {
+  id                String   @id @default(uuid())
+  tenantId          String
+  type              ContactType // customer, supplier, user, lead, other
+
+  // Datos base
+  name              String
+  email             String?
+  phone             String?
+  mobile            String?
+  taxId             String?  // RUC/NIT/CIF
+  website           String?
+
+  // Dirección
+  street            String?
+  city              String?
+  state             String?
+  zip               String?
+  country           String?  @default("PY")
+
+  // Configuración
+  isCompany         Boolean  @default(false)
+  parentId          String?  // Contacto padre (para contactos múltiples de una empresa)
+
+  // Para proveedores
+  supplierRank      Int      @default(0) // 0 = no es proveedor
+  purchaseWarning   String?  // Alerta de proveedor (ej: "retrasos frecuentes")
+
+  // Para clientes
+  customerRank      Int      @default(0) // 0 = no es cliente
+  salesWarning      String?  // Alerta de cliente (ej: "pago lento")
+
+  // Para leads
+  leadSource        String?  // website, referral, social, etc.
+  leadStatus        LeadStatus? @default(NEW)
+  leadScore         Int      @default(0)
+
+  // Notas y metadata
+  notes             String?
+  metadata          Json?
+
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relaciones
+  tenant            Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userAccess        UserTenantAccess? // Enlace con acceso de usuario
+  roles             ContactRole[] @relation("ContactRoles")
+  giveawayRegistrations GiveawayRegistration[]
+  giveawayWinners       GiveawayWinner[]
+
+  // Índices
+  @@index([tenantId])
+  @@index([tenantId, type])
+  @@index([email])
+  @@index([phone])
+  @@index([taxId])
+  @@map("contacts")
+}
+
+enum ContactType {
+  CUSTOMER
+  SUPPLIER
+  USER
+  LEAD
+  OTHER
+}
+
+// Tabla intermedia para múltiples roles simultáneos (tipo Odoo)
+model ContactRole {
+  id          String   @id @default(uuid())
+  contactId   String
+  tenantId    String
+  role        ContactRoleType
+  isPrimary   Boolean  @default(false) // Rol principal
+  createdAt   DateTime @default(now())
+
+  // Relaciones
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade, name: "ContactRoles")
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, role]) // Un rol por contacto
+  @@index([contactId])
+  @@index([tenantId, role])
+  @@map("contact_roles")
+}
+
+enum ContactRoleType {
+  CUSTOMER
+  SUPPLIER
+  USER
+  LEAD
+  OTHER
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  PROPOSAL
+  WON
+  LOST
+}
+
+// ============================================
+// ORDER - Cabecera de Pedido
+// ============================================
+model Order {
+  id              String      @id @default(uuid())
+  tenantId        String
+  customerId      String?
+  status          OrderStatus @default(DRAFT) // draft, confirmed, cancelled
+  totalAmount     Decimal     @default(0) @db.Decimal(15, 2)
+  currency        String      @default("PYG")
+  metadata        Json?       // Datos adicionales del pedido
+  webhookSent     Boolean     @default(false) // Si ya se envió el webhook al ERP
+  webhookSentAt   DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relaciones
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer        Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  orderLines      OrderLine[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@map("orders")
+}
+
+// ============================================
+// ORDER_LINE - Detalle de Ítems del Pedido
+// ============================================
+model OrderLine {
+  id             String   @id @default(uuid())
+  orderId        String
+  productId      String
+  quantity       Int
+  costPrice      Decimal  @db.Decimal(15, 2) @default(0) // Costo al momento de la venta
+  priceAtSale    Decimal  @db.Decimal(15, 2) // Precio de venta
+  subtotal       Decimal  @db.Decimal(15, 2)
+  taxAmount      Decimal  @db.Decimal(15, 2) @default(0) // Monto de impuesto
+  grossProfit    Decimal  @db.Decimal(15, 2) @default(0) // Ganancia bruta (subtotal - cost - tax)
+  profitMargin   Decimal  @db.Decimal(5, 2) @default(0) // Margen de ganancia (%)
+  metadata       Json?    // Snapshot del producto al momento de la venta
+  createdAt      DateTime @default(now())
+
+  // Relaciones
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  appointment    AppointmentAssignment? // Relación 1:1 opcional con turno asignado
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_lines")
+}
+
+// ============================================
+// WEBHOOK_LOG - Audit de Webhooks Enviados
+// ============================================
+model WebhookLog {
+  id            String   @id @default(uuid())
+  tenantId      String
+  orderId       String
+  url           String
+  payload       Json
+  status        Int      // HTTP status code
+  response      String?  // Respuesta del servidor externo
+  attempts      Int      @default(1)
+  success       Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("webhook_logs")
+}
+
+// ============================================
+// BOOKINGS - Gestión de Turnos/Citas
+// ============================================
+
+// Service - Extiende Product con lógica de tiempo
+model Service {
+  id                       String   @id @default(uuid())
+  productId                String   @unique // FK a Product
+  durationMinutes          Int      @default(60)
+  bufferBeforeMinutes      Int      @default(0)
+  bufferAfterMinutes       Int      @default(0)
+  requiresProfessional     Boolean  @default(true)
+  requiresPhysicalResource Boolean  @default(false)
+  maxAdvanceDays           Int      @default(30) // Cuántos días antes se puede reservar
+  minAdvanceHours          Int      @default(2)  // Mínimo de horas antes de reservar
+  isOnlineBookable         Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  // Relaciones
+  product              Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  bookingSlots         BookingSlot[]
+  appointmentAssignments AppointmentAssignment[]
+
+  @@index([productId])
+  @@map("services")
+}
+
+// Resource - Profesionales (HUMAN) o Cabinas/Consultorios (PHYSICAL)
+model Resource {
+  id                String   @id @default(uuid())
+  tenantId          String
+  name              String
+  type              ResourceType
+  specialtyCategory String?
+  isActive          Boolean  @default(true)
+  metadata          Json?    // Datos adicionales (foto, equipamiento, etc.)
+  odooModel         String?  // 'hr.employee', 'resource.resource'
+  odooExternalId    String?  // ID en Odoo
+  odooLastSyncedAt  DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relaciones
+  tenant              Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  availability        ResourceAvailability[]
+  exceptions          ResourceException[]
+  professionalAppointments AppointmentAssignment[] @relation("AppointmentProfessional")
+  physicalResourceAppointments AppointmentAssignment[] @relation("AppointmentPhysicalResource")
+
+  @@index([tenantId])
+  @@index([tenantId, type])
+  @@index([odooExternalId])
+  @@map("resources")
+}
+
+// ResourceAvailability - Horarios base de cada recurso
+model ResourceAvailability {
+  id                   String   @id @default(uuid())
+  resourceId           String
+  dayOfWeek            Int?     // 0-6 (null = aplica a todos los días)
+  startTime            String   // Formato "HH:MM"
+  endTime              String   // Formato "HH:MM"
+  exceptionDate        DateTime? @db.Date
+  exceptionType        ExceptionType?
+  exceptionStartTime   String?  // Formato "HH:MM"
+  exceptionEndTime     String?  // Formato "HH:MM"
+  createdAt            DateTime @default(now())
+
+  // Relaciones
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+  @@index([resourceId, dayOfWeek])
+  @@unique([resourceId, exceptionDate]) // Una excepción por día
+  @@map("resource_availability")
+}
+
+// ResourceException - Excepciones específicas (vacaciones, feriados)
+model ResourceException {
+  id          String   @id @default(uuid())
+  resourceId  String
+  date        DateTime @db.Date
+  type        ExceptionType
+  allDay      Boolean  @default(true)
+  startTime   String?  // Formato "HH:MM"
+  endTime     String?  // Formato "HH:MM"
+  reason      String?
+  createdAt   DateTime @default(now())
+
+  // Relaciones
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([resourceId, date])
+  @@index([resourceId])
+  @@map("resource_exceptions")
+}
+
+// BookingSlot - Slots de disponibilidad generados
+model BookingSlot {
+  id            String    @id @default(uuid())
+  serviceId     String
+  startDatetime DateTime
+  endDatetime   DateTime
+  isBlocked     Boolean   @default(false)
+  blockedUntil  DateTime?
+  appointmentId String?   @unique // FK a AppointmentAssignment (cuando se confirma)
+  createdAt     DateTime  @default(now())
+
+  // Relaciones
+  service     Service               @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  appointment AppointmentAssignment? @relation(name: "BookingAppointment")
+
+  @@index([serviceId, startDatetime])
+  @@index([isBlocked])
+  @@index([blockedUntil])
+  @@map("booking_slots")
+}
+
+// AppointmentAssignment - Reserva confirmada con recursos asignados
+model AppointmentAssignment {
+  id                   String    @id @default(uuid())
+  orderLineId          String
+  serviceId            String
+  professionalId       String?   // nullable (no todos los servicios requieren profesional)
+  physicalResourceId   String?   // nullable (no todos los servicios requieren cabina)
+  scheduledStart       DateTime
+  scheduledEnd         DateTime
+  appointmentId        String?   @unique // FK a BookingSlot (cuando está asignado)
+  createdAt            DateTime  @default(now())
+
+  // Relaciones
+  service          Service         @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  professional     Resource?       @relation(fields: [professionalId], references: [id], onDelete: SetNull, name: "AppointmentProfessional")
+  physicalResource Resource?       @relation(fields: [physicalResourceId], references: [id], onDelete: SetNull, name: "AppointmentPhysicalResource")
+  orderLine        OrderLine       @relation(fields: [orderLineId], references: [id], onDelete: Cascade)
+  booking          BookingSlot?    @relation(fields: [appointmentId], references: [id], name: "BookingAppointment")
+
+  @@unique([orderLineId]) // Un appointment por order line
+  @@index([serviceId])
+  @@index([professionalId])
+  @@index([physicalResourceId])
+  @@index([scheduledStart])
+  @@map("appointment_assignments")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+enum OrderStatus {
+  DRAFT
+  CONFIRMED
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum ResourceType {
+  HUMAN      // Profesional (empleado)
+  PHYSICAL   // Cabina, consultorio, equipo
+}
+
+enum ExceptionType {
+  VACATION     // Vacaciones
+  SICK_LEAVE   // Licencia por enfermedad
+  HOLIDAY      // Feriado
+  TRAINING     // Capacitación
+  CUSTOM       // Otro
+}
+
+enum UserRole {
+  ADMIN       // Administrador total del tenant
+  MANAGER     // Gerente (puede gestionar productos, clientes, turnos)
+  SELLER      // Vendedor (solo puede crear pedidos y ver clientes)
+  VIEWER      // Solo lectura
+}
+
+enum IntegrationType {
+  ODOO        // ERP Odoo
+  MIDA        // ERP MIDA (Paraguay)
+  SAP         // ERP SAP
+  CUSTOM      // Integración personalizada vía webhook
+}
+
+// ============================================
+// USER - Usuarios del sistema (Globales)
+// ============================================
+model User {
+  id               String   @id @default(uuid())
+  email            String   @unique // Email único a nivel global
+  passwordHash     String
+  name             String   // Nombre denormalizado
+  isSuperAdmin     Boolean  @default(false) // Administrador de TI
+  
+  defaultTenantId  String?  // Tenant principal al iniciar sesión
+  
+  // JWT session management
+  refreshTokenHash String?
+  tokenExpiresAt   DateTime?
+  
+  active           Boolean  @default(true)
+  lastLoginAt      DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relaciones
+  defaultTenant    Tenant?             @relation("DefaultTenant", fields: [defaultTenantId], references: [id])
+  tenantAccess     UserTenantAccess[]
+
+  @@map("users")
+}
+
+// Tabla intermedia: Qué usuario accede a qué tenant y con qué rol
+model UserTenantAccess {
+  id          String   @id @default(uuid())
+  userId      String
+  tenantId    String
+  role        UserRole @default(VIEWER) 
+  contactId   String?  @unique // Ficha de contacto (res.partner) dentro de ese tenant
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact     Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, tenantId])
+  @@index([userId])
+  @@index([tenantId])
+  @@map("user_tenant_access")
+}
+
+// ============================================
+// INTEGRATION - Conexiones con sistemas externos
+// ============================================
+model Integration {
+  id              String         @id @default(uuid())
+  tenantId        String
+  name            String
+  type            IntegrationType
+  active          Boolean        @default(true)
+  config          Json           // Configuración específica (URL, credenciales, etc.)
+  webhookUrl      String?        // URL para recibir webhooks del sistema externo
+  lastSyncAt      DateTime?
+  lastError       String?
+  lastErrorAt     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relaciones
+  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([type])
+  @@map("integrations")
+}
+
+// ============================================
+// MODULE_INSTALLATION - Módulos instalados por tenant
+// ============================================
+model ModuleInstallation {
+  id          String   @id @default(uuid())
+  tenantId    String
+  moduleId    String
+  version     String
+  installedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  active      Boolean  @default(true)
+  config      Json     @default("{}") // Configuraciones dinámicas (ej: SFTP host, cron)
+  
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@unique([tenantId, moduleId])
+  @@map("module_installations")
+}
+
+// ============================================
+// QUOTATIONS - Cotizaciones/Presupuestos (Módulo Opcional)
+// ============================================
+model Quotation {
+  id            String          @id @default(uuid())
+  number        String
+  tenantId      String
+  customerId    String
+  status        String          @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED
+  totalAmount   Float
+  validUntil    DateTime?
+  notes         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  items         QuotationItem[]
+  
+  // No hacemos relación dura a Tenant/Customer aquí para no ensuciar el core si el módulo se borra,
+  // pero lógicamente pertenece a ellos.
+
+  @@index([tenantId])
+  @@map("quotations")
+}
+
+model QuotationItem {
+  id          String    @id @default(uuid())
+  quotationId String
+  productId   String
+  quantity    Int
+  unitPrice   Float
+  totalPrice  Float
+  
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+  @@map("quotation_items")
+}
+
+// ============================================
+// GIVEAWAY - Gestión de Sorteos
+// ============================================
+model Giveaway {
+  id            String                     @id @default(uuid())
+  tenantId      String
+  name          String                     // Nombre del sorteo
+  description   String?
+  prizes        Json                       // Lista de premios [{rank: 1, name: "iPhone 15"}, ...]
+  background    Json?                      // Configuración de fondo {type: "color"|"image"|"video", color: "#6F2729", url: "..."}
+  status        GiveawayStatus             @default(ACTIVE)
+  startDate     DateTime
+  endDate       DateTime
+  drawDate      DateTime?                  // Cuándo se realizó el sorteo
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
+
+  // Relaciones
+  tenant        Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  registrations GiveawayRegistration[]
+  winners       GiveawayWinner[]
+
+  @@index([tenantId])
+  @@map("giveaways")
+}
+
+enum GiveawayStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+}
+
+// ============================================
+// GIVEAWAY_REGISTRATION - Participantes del Sorteo
+// ============================================
+model GiveawayRegistration {
+  id            String   @id @default(uuid())
+  giveawayId    String
+  contactId     String   // Relación al contacto unificado
+  utmSource     String   // facebook, instagram, tiktok, whatsapp, web, etc.
+  authProvider  String?  // google, facebook, manual
+  createdAt     DateTime @default(now())
+
+  // Relaciones
+  giveaway      Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  contact       Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([giveawayId, contactId]) // Evita doble participación en el mismo sorteo
+  @@index([giveawayId])
+  @@map("giveaway_registrations")
+}
+
+// ============================================
+// GIVEAWAY_WINNER - Ganadores del Sorteo
+// ============================================
+model GiveawayWinner {
+  id            String   @id @default(uuid())
+  giveawayId    String
+  contactId     String
+  prizeName     String
+  drawOrder     Int      // 1er lugar, 2do lugar, etc.
+  drawnAt       DateTime @default(now())
+
+  giveaway      Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  contact       Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@map("giveaway_winners")
+}
