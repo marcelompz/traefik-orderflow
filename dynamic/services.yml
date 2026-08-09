@@ -185,7 +185,25 @@ http:
       entryPoints: [web]
       service: aieer-staging-backend
 
+    # ===================== NANDUTIA PROD =====================
+    nanduti-prod:
+      rule: "Host(`nanduti.pesallaccia.com`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: nanduti-prod
+      middlewares: [secure-headers]
+    nanduti-prod-http:
+      rule: "Host(`nanduti.pesallaccia.com`)"
+      entryPoints: [web]
+      service: nanduti-prod
+      middlewares: [secure-headers]
+
   services:
+    nanduti-prod:
+      loadBalancer:
+        servers:
+          - url: "http://nandutia_app:8000"
     giveaways-standalone-svc:
       loadBalancer:
         servers:
