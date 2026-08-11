@@ -161,29 +161,151 @@ http:
       entryPoints: [web]
       service: whatsapp-catalog-standalone-svc
 
-    # ===================== AIER STAGING =====================
+    # ===================== AIEER PROD (CETISA) =====================
+    aieer-prod:
+      rule: "Host(`aieer.cetisa.com.py`)"
+      priority: 100
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: aieer-prod-frontend
+      middlewares: [secure-headers]
+    aieer-prod-http:
+      rule: "Host(`aieer.cetisa.com.py`)"
+      priority: 100
+      entryPoints: [web]
+      service: aieer-prod-frontend
+      middlewares: [secure-headers]
+    aieer-prod-api:
+      rule: "Host(`aieer.cetisa.com.py`) && (PathPrefix(`/api`) || PathPrefix(`/token`))"
+      priority: 110
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: aieer-prod-backend
+    aieer-prod-api-http:
+      rule: "Host(`aieer.cetisa.com.py`) && (PathPrefix(`/api`) || PathPrefix(`/token`))"
+      priority: 110
+      entryPoints: [web]
+      service: aieer-prod-backend
+
+    # ===================== AIEER STAGING (CETISA / PESALLACCIA) =====================
     aieer-staging:
-      rule: "Host(`staging.aieer.pesallaccia.com`)"
+      rule: "Host(`staging.aieer.pesallaccia.com`) || Host(`aieer-staging.cetisa.com.py`)"
+      priority: 100
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
       service: aieer-staging-frontend
       middlewares: [secure-headers]
     aieer-staging-http:
-      rule: "Host(`staging.aieer.pesallaccia.com`)"
+      rule: "Host(`staging.aieer.pesallaccia.com`) || Host(`aieer-staging.cetisa.com.py`)"
+      priority: 100
       entryPoints: [web]
       service: aieer-staging-frontend
       middlewares: [secure-headers]
     aieer-staging-api:
-      rule: "Host(`staging.aieer.pesallaccia.com`) && PathPrefix(`/api`)"
+      rule: "(Host(`staging.aieer.pesallaccia.com`) || Host(`aieer-staging.cetisa.com.py`)) && (PathPrefix(`/api`) || PathPrefix(`/token`))"
+      priority: 110
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
       service: aieer-staging-backend
     aieer-staging-api-http:
-      rule: "Host(`staging.aieer.pesallaccia.com`) && PathPrefix(`/api`)"
+      rule: "(Host(`staging.aieer.pesallaccia.com`) || Host(`aieer-staging.cetisa.com.py`)) && (PathPrefix(`/api`) || PathPrefix(`/token`))"
+      priority: 110
       entryPoints: [web]
       service: aieer-staging-backend
+
+    # ===================== CAPACITACIONES PSICOVITAL =====================
+    capacitaciones:
+      rule: "Host(`capacitaciones.psicovital.com.py`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: capacitaciones-svc
+      middlewares: [secure-headers]
+    capacitaciones-http:
+      rule: "Host(`capacitaciones.psicovital.com.py`)"
+      entryPoints: [web]
+      service: capacitaciones-svc
+      middlewares: [secure-headers]
+
+    # ===================== DEMO ODOO =====================
+    demo-odoo:
+      rule: "Host(`demo.pesallaccia.com`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: demo-odoo-svc
+    demo-odoo-http:
+      rule: "Host(`demo.pesallaccia.com`)"
+      entryPoints: [web]
+      service: demo-odoo-svc
+
+    # ===================== VAULTWARDEN (SECURE) =====================
+    vaultwarden:
+      rule: "Host(`secure.pesallaccia.com`)"
+      priority: 100
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: vaultwarden-svc
+    vaultwarden-http:
+      rule: "Host(`secure.pesallaccia.com`)"
+      priority: 100
+      entryPoints: [web]
+      service: vaultwarden-svc
+    vaultwarden-ws:
+      rule: "Host(`secure.pesallaccia.com`) && PathPrefix(`/notifications/hub`)"
+      priority: 110
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: vaultwarden-ws-svc
+    vaultwarden-ws-http:
+      rule: "Host(`secure.pesallaccia.com`) && PathPrefix(`/notifications/hub`)"
+      priority: 110
+      entryPoints: [web]
+      service: vaultwarden-ws-svc
+
+    # ===================== VITALOG =====================
+    vitalog:
+      rule: "Host(`vitalog.pesallaccia.com`)"
+      priority: 100
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: vitalog-mobile-svc
+    vitalog-http:
+      rule: "Host(`vitalog.pesallaccia.com`)"
+      priority: 100
+      entryPoints: [web]
+      service: vitalog-mobile-svc
+    vitalog-web:
+      rule: "Host(`vitalog.pesallaccia.com`) && PathPrefix(`/web`)"
+      priority: 110
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: vitalog-web-svc
+    vitalog-web-http:
+      rule: "Host(`vitalog.pesallaccia.com`) && PathPrefix(`/web`)"
+      priority: 110
+      entryPoints: [web]
+      service: vitalog-web-svc
+    vitalog-api:
+      rule: "Host(`vitalog.pesallaccia.com`) && (PathPrefix(`/api`) || PathPrefix(`/docs`) || PathPrefix(`/openapi.json`))"
+      priority: 120
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: vitalog-api-svc
+    vitalog-api-http:
+      rule: "Host(`vitalog.pesallaccia.com`) && (PathPrefix(`/api`) || PathPrefix(`/docs`) || PathPrefix(`/openapi.json`))"
+      priority: 120
+      entryPoints: [web]
+      service: vitalog-api-svc
 
     # ===================== NANDUTIA PROD =====================
     nanduti-prod:
@@ -200,6 +322,42 @@ http:
       middlewares: [secure-headers]
 
   services:
+    aieer-prod-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://data_analysis_frontend:80"
+    aieer-prod-backend:
+      loadBalancer:
+        servers:
+          - url: "http://data_analysis_backend:8000"
+    capacitaciones-svc:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:8080"
+    demo-odoo-svc:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:8038"
+    vaultwarden-svc:
+      loadBalancer:
+        servers:
+          - url: "http://vaultwarden:80"
+    vaultwarden-ws-svc:
+      loadBalancer:
+        servers:
+          - url: "http://vaultwarden:3012"
+    vitalog-mobile-svc:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:8888"
+    vitalog-web-svc:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:3333"
+    vitalog-api-svc:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:8000"
     nanduti-prod:
       loadBalancer:
         servers:
@@ -252,3 +410,4 @@ http:
       loadBalancer:
         servers:
           - url: "http://staging_backend:8000"
+

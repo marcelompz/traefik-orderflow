@@ -19,6 +19,8 @@ services:
       - ./traefik.yml:/etc/traefik/traefik.yml:ro
       - ./dynamic:/etc/traefik/dynamic:ro
       - ./acme.json:/letsencrypt/acme.json
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - traefik-public
 
