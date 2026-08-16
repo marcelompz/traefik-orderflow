@@ -49,3 +49,8 @@ http:
             frame-ancestors 'self';
             base-uri 'self';
             form-action 'self'
+
+    vitalog-strip-api:
+      stripPrefix:
+        prefixes:
+          - "/api"

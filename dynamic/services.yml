@@ -276,24 +276,24 @@ http:
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
-      service: vitalog-mobile-svc
+      service: vitalog-web-svc
     vitalog-http:
       rule: "Host(`vitalog.pesallaccia.com`)"
       priority: 100
       entryPoints: [web]
-      service: vitalog-mobile-svc
-    vitalog-web:
-      rule: "Host(`vitalog.pesallaccia.com`) && PathPrefix(`/web`)"
+      service: vitalog-web-svc
+    vitalog-mobile:
+      rule: "Host(`vitalog.pesallaccia.com`) && PathPrefix(`/mobile`)"
       priority: 110
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
-      service: vitalog-web-svc
-    vitalog-web-http:
-      rule: "Host(`vitalog.pesallaccia.com`) && PathPrefix(`/web`)"
+      service: vitalog-mobile-svc
+    vitalog-mobile-http:
+      rule: "Host(`vitalog.pesallaccia.com`) && PathPrefix(`/mobile`)"
       priority: 110
       entryPoints: [web]
-      service: vitalog-web-svc
+      service: vitalog-mobile-svc
     vitalog-api:
       rule: "Host(`vitalog.pesallaccia.com`) && (PathPrefix(`/api`) || PathPrefix(`/docs`) || PathPrefix(`/openapi.json`))"
       priority: 120
@@ -353,11 +353,11 @@ http:
     vitalog-web-svc:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:3333"
+          - url: "http://vitalog-frontend-web-1:3333"
     vitalog-api-svc:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:8000"
+          - url: "http://vitalog-backend-1:8000"
     nanduti-prod:
       loadBalancer:
         servers:
