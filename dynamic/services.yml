@@ -12,6 +12,13 @@
 
 http:
   routers:
+    # Global redirect to HTTPS (excluding Let's Encrypt challenges)
+    redirect-to-https:
+      rule: "HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)"
+      entryPoints: [web]
+      middlewares: [redirect-to-https-middleware]
+      service: noop-service
+
     # ===================== AXON PROD =====================
     axon-prod:
       rule: "Host(`axon.pesallaccia.com`)"
@@ -167,7 +174,7 @@ http:
       priority: 100
       entryPoints: [websecure]
       tls:
-        certResolver: letsencrypt
+        certResolver: letsencrypt-http
       service: aieer-prod-frontend
       middlewares: [secure-headers]
     aieer-prod-http:
@@ -181,7 +188,7 @@ http:
       priority: 110
       entryPoints: [websecure]
       tls:
-        certResolver: letsencrypt
+        certResolver: letsencrypt-http
       service: aieer-prod-backend
     aieer-prod-api-http:
       rule: "Host(`aieer.cetisa.com.py`) && (PathPrefix(`/api`) || PathPrefix(`/token`))"
@@ -195,7 +202,7 @@ http:
       priority: 100
       entryPoints: [websecure]
       tls:
-        certResolver: letsencrypt
+        certResolver: letsencrypt-http
       service: aieer-staging-frontend
       middlewares: [secure-headers]
     aieer-staging-http:
@@ -209,7 +216,7 @@ http:
       priority: 110
       entryPoints: [websecure]
       tls:
-        certResolver: letsencrypt
+        certResolver: letsencrypt-http
       service: aieer-staging-backend
     aieer-staging-api-http:
       rule: "(Host(`staging.aieer.pesallaccia.com`) || Host(`aieer-staging.cetisa.com.py`)) && (PathPrefix(`/api`) || PathPrefix(`/token`))"
@@ -410,4 +417,14 @@ http:
       loadBalancer:
         servers:
           - url: "http://staging_backend:8000"
+    noop-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:9999"
+
+  middlewares:
+    redirect-to-https-middleware:
+      redirectScheme:
+        scheme: https
+        permanent: true
 
