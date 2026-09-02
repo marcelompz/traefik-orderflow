@@ -49,39 +49,41 @@ http:
 
     # ===================== ORDERFLOW PROD =====================
     orderflow-prod:
-      rule: "Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)"
-      priority: 100
+      rule: "Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`) || HostRegexp(`^[a-zA-Z0-9-]+\\.pesallaccia\\.com$`)"
+      priority: 90
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
       service: orderflow-prod-frontend
       middlewares: [secure-headers-cloudflare]
     orderflow-prod-http:
-      rule: "Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)"
-      priority: 100
+      rule: "Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`) || HostRegexp(`^[a-zA-Z0-9-]+\\.pesallaccia\\.com$`)"
+      priority: 90
       entryPoints: [web]
       service: orderflow-prod-frontend
       middlewares: [secure-headers-cloudflare]
     orderflow-prod-api:
-      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/api`)"
-      priority: 110
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`) || HostRegexp(`^[a-zA-Z0-9-]+\\.pesallaccia\\.com$`)) && PathPrefix(`/api`)"
+      priority: 95
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
       service: orderflow-prod-backend
     orderflow-prod-api-http:
-      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/api`)"
-      priority: 110
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`) || HostRegexp(`^[a-zA-Z0-9-]+\\.pesallaccia\\.com$`)) && PathPrefix(`/api`)"
+      priority: 95
       entryPoints: [web]
       service: orderflow-prod-backend
     orderflow-prod-webhook:
-      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/webhook`)"
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`) || HostRegexp(`^[a-zA-Z0-9-]+\\.pesallaccia\\.com$`)) && PathPrefix(`/webhook`)"
+      priority: 95
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
       service: orderflow-prod-odoo
     orderflow-prod-webhook-http:
-      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/webhook`)"
+      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`) || HostRegexp(`^[a-zA-Z0-9-]+\\.pesallaccia\\.com$`)) && PathPrefix(`/webhook`)"
+      priority: 95
       entryPoints: [web]
       service: orderflow-prod-odoo
 
@@ -127,19 +129,19 @@ http:
 
     # ===================== TENANT SUBDOMAINS =====================
     tenant-storefront:
-      rule: "HostRegexp(`{subdomain:[a-zA-Z0-9-]+}.pesallaccia.com`) && !Host(`orderflow.pesallaccia.com`) && !Host(`pesallaccia.com`) && !Host(`api.pesallaccia.com`) && !Host(`staging.pesallaccia.com`) && !Host(`axon.pesallaccia.com`) && !Host(`staging.axon.pesallaccia.com`) && !Host(`odoo.pesallaccia.com`)"
-      priority: 50
+      rule: "HostRegexp(`^[a-zA-Z0-9-]+\\.pesallaccia\\.com$`) && !Host(`orderflow.pesallaccia.com`) && !Host(`pesallaccia.com`) && !Host(`api.pesallaccia.com`) && !Host(`staging.pesallaccia.com`) && !Host(`axon.pesallaccia.com`) && !Host(`staging.axon.pesallaccia.com`) && !Host(`odoo.pesallaccia.com`)"
+      priority: 90
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
-      service: orderflow-staging-frontend
-      middlewares: [secure-headers]
+      service: orderflow-prod-frontend
+      middlewares: [secure-headers-cloudflare]
     tenant-storefront-http:
-      rule: "HostRegexp(`{subdomain:[a-zA-Z0-9-]+}.pesallaccia.com`) && !Host(`orderflow.pesallaccia.com`) && !Host(`pesallaccia.com`) && !Host(`api.pesallaccia.com`) && !Host(`staging.pesallaccia.com`) && !Host(`axon.pesallaccia.com`) && !Host(`staging.axon.pesallaccia.com`) && !Host(`odoo.pesallaccia.com`)"
-      priority: 50
+      rule: "HostRegexp(`^[a-zA-Z0-9-]+\\.pesallaccia\\.com$`) && !Host(`orderflow.pesallaccia.com`) && !Host(`pesallaccia.com`) && !Host(`api.pesallaccia.com`) && !Host(`staging.pesallaccia.com`) && !Host(`axon.pesallaccia.com`) && !Host(`staging.axon.pesallaccia.com`) && !Host(`odoo.pesallaccia.com`)"
+      priority: 90
       entryPoints: [web]
-      service: orderflow-staging-frontend
-      middlewares: [secure-headers]
+      service: orderflow-prod-frontend
+      middlewares: [secure-headers-cloudflare]
 
     # ===================== STANDALONE MICROSERVICES =====================
     giveaways-standalone:
