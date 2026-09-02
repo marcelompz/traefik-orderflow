@@ -168,6 +168,32 @@ http:
       entryPoints: [web]
       service: whatsapp-catalog-standalone-svc
 
+    omnisites-standalone:
+      rule: "Host(`sites.pesallaccia.com`) || PathPrefix(`/sites-standalone`)"
+      priority: 130
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: omnisites-standalone-svc
+    omnisites-standalone-http:
+      rule: "Host(`sites.pesallaccia.com`) || PathPrefix(`/sites-standalone`)"
+      priority: 130
+      entryPoints: [web]
+      service: omnisites-standalone-svc
+
+    omnivector-standalone:
+      rule: "Host(`vector.pesallaccia.com`) || PathPrefix(`/vector-standalone`)"
+      priority: 130
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: omnivector-standalone-svc
+    omnivector-standalone-http:
+      rule: "Host(`vector.pesallaccia.com`) || PathPrefix(`/vector-standalone`)"
+      priority: 130
+      entryPoints: [web]
+      service: omnivector-standalone-svc
+
     # ===================== AIEER PROD (CETISA) =====================
     aieer-prod:
       rule: "Host(`aieer.cetisa.com.py`)"
@@ -377,6 +403,14 @@ http:
       loadBalancer:
         servers:
           - url: "http://orderflow_whatsapp_catalog_standalone:3021"
+    omnisites-standalone-svc:
+      loadBalancer:
+        servers:
+          - url: "http://orderflow_omnisites_standalone:3030"
+    omnivector-standalone-svc:
+      loadBalancer:
+        servers:
+          - url: "http://orderflow_omnivector_standalone:3029"
     odoo-19-ce:
       loadBalancer:
         servers:
