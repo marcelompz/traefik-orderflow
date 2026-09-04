@@ -18,7 +18,7 @@ http:
           style-src 'self' 'unsafe-inline';
           img-src 'self' data: https:;
           font-src 'self' data: https://fonts.gstatic.com;
-          connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com;
+          connect-src 'self' http: https: ws: wss: https://cloudflareinsights.com https://*.cloudflareinsights.com;
           frame-ancestors 'self';
           base-uri 'self';
           form-action 'self'
@@ -45,7 +45,7 @@ http:
             style-src 'self' 'unsafe-inline';
             img-src 'self' data: https:;
             font-src 'self' data: https://fonts.gstatic.com;
-            connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com;
+            connect-src 'self' http: https: ws: wss: https://cloudflareinsights.com https://*.cloudflareinsights.com;
             frame-ancestors 'self';
             base-uri 'self';
             form-action 'self'
