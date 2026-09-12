@@ -170,6 +170,19 @@ http:
       entryPoints: [web]
       service: whatsapp-catalog-standalone-svc
 
+    biolinks-standalone:
+      rule: "Host(`bio.pesallaccia.com`) || PathPrefix(`/bio-standalone`)"
+      priority: 130
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: biolinks-standalone-svc
+    biolinks-standalone-http:
+      rule: "Host(`bio.pesallaccia.com`) || PathPrefix(`/bio-standalone`)"
+      priority: 130
+      entryPoints: [web]
+      service: biolinks-standalone-svc
+
     omnisites-standalone:
       rule: "Host(`sites.pesallaccia.com`) || PathPrefix(`/sites-standalone`)"
       priority: 130
@@ -356,6 +369,72 @@ http:
       service: nanduti-prod
       middlewares: [secure-headers]
 
+    # ===================== LOCAL SERVICES (*.local) =====================
+    # ORDERFLOW LOCAL
+    orderflow-local:
+      rule: "Host(`orderflow.local`) || HostRegexp(`^[a-zA-Z0-9-]+\\.orderflow\\.local$`)"
+      priority: 90
+      entryPoints: [websecure]
+      tls: {}
+      service: orderflow-prod-frontend
+      middlewares: [secure-headers]
+    orderflow-local-http:
+      rule: "Host(`orderflow.local`) || HostRegexp(`^[a-zA-Z0-9-]+\\.orderflow\\.local$`)"
+      priority: 90
+      entryPoints: [web]
+      service: orderflow-prod-frontend
+      middlewares: [secure-headers]
+    orderflow-local-api:
+      rule: "(Host(`orderflow.local`) || HostRegexp(`^[a-zA-Z0-9-]+\\.orderflow\\.local$`)) && PathPrefix(`/api`)"
+      priority: 95
+      entryPoints: [websecure]
+      tls: {}
+      service: orderflow-prod-backend
+    orderflow-local-api-http:
+      rule: "(Host(`orderflow.local`) || HostRegexp(`^[a-zA-Z0-9-]+\\.orderflow\\.local$`)) && PathPrefix(`/api`)"
+      priority: 95
+      entryPoints: [web]
+      service: orderflow-prod-backend
+
+    # SITESINSPECT LOCAL
+    sitesinspect-local:
+      rule: "Host(`sitesinspect.local`) || HostRegexp(`^[a-zA-Z0-9-]+\\.sitesinspect\\.local$`)"
+      entryPoints: [websecure]
+      tls: {}
+      service: sitesinspect-local-svc
+      middlewares: [secure-headers]
+    sitesinspect-local-http:
+      rule: "Host(`sitesinspect.local`) || HostRegexp(`^[a-zA-Z0-9-]+\\.sitesinspect\\.local$`)"
+      entryPoints: [web]
+      service: sitesinspect-local-svc
+      middlewares: [secure-headers]
+
+    # OMNISITES LOCAL
+    omnisites-local:
+      rule: "Host(`omnisites.local`) || HostRegexp(`^[a-zA-Z0-9-]+\\.omnisites\\.local$`)"
+      entryPoints: [websecure]
+      tls: {}
+      service: omnisites-standalone-svc
+      middlewares: [secure-headers]
+    omnisites-local-http:
+      rule: "Host(`omnisites.local`) || HostRegexp(`^[a-zA-Z0-9-]+\\.omnisites\\.local$`)"
+      entryPoints: [web]
+      service: omnisites-standalone-svc
+      middlewares: [secure-headers]
+
+    # OMNIBI LOCAL
+    omnibi-local:
+      rule: "Host(`omnibi.local`) || HostRegexp(`^[a-zA-Z0-9-]+\\.omnibi\\.local$`)"
+      entryPoints: [websecure]
+      tls: {}
+      service: omnibi-standalone-svc
+      middlewares: [secure-headers]
+    omnibi-local-http:
+      rule: "Host(`omnibi.local`) || HostRegexp(`^[a-zA-Z0-9-]+\\.omnibi\\.local$`)"
+      entryPoints: [web]
+      service: omnibi-standalone-svc
+      middlewares: [secure-headers]
+
   services:
     aieer-prod-frontend:
       loadBalancer:
@@ -405,6 +484,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://orderflow_whatsapp_catalog_standalone:3021"
+    biolinks-standalone-svc:
+      loadBalancer:
+        servers:
+          - url: "http://orderflow_biolinks_standalone:3022"
     omnisites-standalone-svc:
       loadBalancer:
         servers:
@@ -453,6 +536,14 @@ http:
       loadBalancer:
         servers:
           - url: "http://staging_backend:8000"
+    sitesinspect-local-svc:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:3000"
+    omnibi-standalone-svc:
+      loadBalancer:
+        servers:
+          - url: "http://orderflow_omnibi_standalone:3028"
     noop-service:
       loadBalancer:
         servers:
