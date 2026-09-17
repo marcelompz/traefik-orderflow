@@ -12,9 +12,9 @@
 
 http:
   routers:
-    # Global redirect to HTTPS (excluding Let's Encrypt challenges)
+    # Global redirect to HTTPS (excluding Let's Encrypt challenges and local development)
     redirect-to-https:
-      rule: "HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)"
+      rule: "HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`) && !Host(`axon.local`) && !Host(`api.axon.local`)"
       entryPoints: [web]
       middlewares: [redirect-to-https-middleware]
       service: noop-service
@@ -143,20 +143,39 @@ http:
       service: orderflow-prod-frontend
       middlewares: [secure-headers-cloudflare]
 
-    # ===================== STANDALONE MICROSERVICES =====================
-    giveaways-standalone:
-      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/standalone/giveaways`)"
-      priority: 120
+    # ===================== PROVECCHIO CUSTOM DOMAIN =====================
+    provecchio-frontend:
+      rule: "Host(`provecchio.com`) || Host(`www.provecchio.com`)"
+      priority: 90
       entryPoints: [websecure]
       tls:
         certResolver: letsencrypt
-      service: giveaways-standalone-svc
-    giveaways-standalone-http:
-      rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/standalone/giveaways`)"
-      priority: 120
+      service: orderflow-prod-frontend
+      middlewares: [secure-headers-cloudflare]
+    provecchio-api:
+      rule: "(Host(`provecchio.com`) || Host(`www.provecchio.com`)) && PathPrefix(`/api`)"
+      priority: 95
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: orderflow-prod-backend
+      middlewares: [secure-headers-cloudflare]
+    provecchio-socketio:
+      rule: "(Host(`provecchio.com`) || Host(`www.provecchio.com`)) && PathPrefix(`/socket.io`)"
+      priority: 95
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: orderflow-prod-backend
+      middlewares: [secure-headers-cloudflare]
+    provecchio-socketio-http:
+      rule: "(Host(`provecchio.com`) || Host(`www.provecchio.com`)) && PathPrefix(`/socket.io`)"
+      priority: 95
       entryPoints: [web]
-      service: giveaways-standalone-svc
+      service: orderflow-prod-backend
+      middlewares: [secure-headers-cloudflare]
 
+    # ===================== STANDALONE MICROSERVICES =====================
     whatsapp-catalog-standalone:
       rule: "(Host(`orderflow.pesallaccia.com`) || Host(`pesallaccia.com`)) && PathPrefix(`/standalone/whatsapp-catalog`)"
       priority: 120
@@ -396,6 +415,23 @@ http:
       entryPoints: [web]
       service: orderflow-prod-backend
 
+    # AXON LOCAL
+    axon-local-http:
+      rule: "Host(`axon.local`) || HostRegexp(`^[a-zA-Z0-9-]+\\.axon\\.local$`)"
+      priority: 100
+      entryPoints: [web]
+      service: axon-local-svc
+    api-axon-local-http:
+      rule: "Host(`api.axon.local`)"
+      priority: 100
+      entryPoints: [web]
+      service: axon-local-svc
+    couchdb-axon-local-http:
+      rule: "Host(`couchdb.axon.local`)"
+      priority: 100
+      entryPoints: [web]
+      service: couchdb-local-svc
+
     # SITESINSPECT LOCAL
     sitesinspect-local:
       rule: "Host(`sitesinspect.local`) || HostRegexp(`^[a-zA-Z0-9-]+\\.sitesinspect\\.local$`)"
@@ -476,10 +512,6 @@ http:
       loadBalancer:
         servers:
           - url: "http://nandutia_app:8000"
-    giveaways-standalone-svc:
-      loadBalancer:
-        servers:
-          - url: "http://orderflow_giveaways_standalone:3020"
     whatsapp-catalog-standalone-svc:
       loadBalancer:
         servers:
@@ -544,6 +576,14 @@ http:
       loadBalancer:
         servers:
           - url: "http://orderflow_omnibi_standalone:3028"
+    axon-local-svc:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:3005"
+    couchdb-local-svc:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:5984"
     noop-service:
       loadBalancer:
         servers:
