@@ -298,6 +298,21 @@ http:
       service: capacitaciones-svc
       middlewares: [secure-headers]
 
+    # ===================== ODOO 18 LOCAL (PROVECCHIO) =====================
+    odoo-18-local:
+      rule: "Host(`odoo.provecchio.local`) || Host(`odoo.provecchio.com`)"
+      priority: 100
+      entryPoints: [websecure]
+      tls: {}
+      service: odoo-18-local-svc
+      middlewares: [secure-headers]
+    odoo-18-local-http:
+      rule: "Host(`odoo.provecchio.local`) || Host(`odoo.provecchio.com`)"
+      priority: 100
+      entryPoints: [web]
+      service: odoo-18-local-svc
+      middlewares: [secure-headers]
+
     # ===================== DEMO ODOO =====================
     demo-odoo:
       rule: "Host(`demo.pesallaccia.com`)"
@@ -471,6 +486,43 @@ http:
       service: omnibi-standalone-svc
       middlewares: [secure-headers]
 
+    # PROVECCHIO LOCAL (field testing)
+    provecchio-local:
+      rule: "Host(`provecchio.local`) || Host(`www.provecchio.local`)"
+      priority: 90
+      entryPoints: [websecure]
+      tls: {}
+      service: orderflow-prod-frontend
+      middlewares: [secure-headers-cloudflare]
+    provecchio-local-http:
+      rule: "Host(`provecchio.local`) || Host(`www.provecchio.local`)"
+      priority: 90
+      entryPoints: [web]
+      service: orderflow-prod-frontend
+      middlewares: [secure-headers-cloudflare]
+    provecchio-local-api:
+      rule: "(Host(`provecchio.local`) || Host(`www.provecchio.local`)) && PathPrefix(`/api`)"
+      priority: 95
+      entryPoints: [websecure]
+      tls: {}
+      service: orderflow-prod-backend
+    provecchio-local-api-http:
+      rule: "(Host(`provecchio.local`) || Host(`www.provecchio.local`)) && PathPrefix(`/api`)"
+      priority: 95
+      entryPoints: [web]
+      service: orderflow-prod-backend
+    provecchio-local-socketio:
+      rule: "(Host(`provecchio.local`) || Host(`www.provecchio.local`)) && PathPrefix(`/socket.io`)"
+      priority: 95
+      entryPoints: [websecure]
+      tls: {}
+      service: orderflow-prod-backend
+    provecchio-local-socketio-http:
+      rule: "(Host(`provecchio.local`) || Host(`www.provecchio.local`)) && PathPrefix(`/socket.io`)"
+      priority: 95
+      entryPoints: [web]
+      service: orderflow-prod-backend
+
   services:
     aieer-prod-frontend:
       loadBalancer:
@@ -588,6 +640,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://127.0.0.1:9999"
+    odoo-18-local-svc:
+      loadBalancer:
+        servers:
+          - url: "http://odoo_init_db_18:8069"
 
   middlewares:
     redirect-to-https-middleware:
