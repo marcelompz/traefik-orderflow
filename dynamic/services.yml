@@ -209,11 +209,29 @@ http:
       tls:
         certResolver: letsencrypt
       service: omnisites-standalone-svc
+      middlewares: [secure-headers]
     omnisites-standalone-http:
       rule: "Host(`sites.pesallaccia.com`) || PathPrefix(`/sites-standalone`)"
       priority: 130
       entryPoints: [web]
       service: omnisites-standalone-svc
+      middlewares: [secure-headers]
+
+    # OMNIBI PROD (OmniBI Analytics Hub)
+    omnibi-standalone:
+      rule: "Host(`bi.pesallaccia.com`) || Host(`bi.provecchio.com`) || PathPrefix(`/bi-standalone`)"
+      priority: 130
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: omnibi-standalone-svc
+      middlewares: [secure-headers]
+    omnibi-standalone-http:
+      rule: "Host(`bi.pesallaccia.com`) || Host(`bi.provecchio.com`) || PathPrefix(`/bi-standalone`)"
+      priority: 130
+      entryPoints: [web]
+      service: omnibi-standalone-svc
+      middlewares: [secure-headers]
 
     omnivector-standalone:
       rule: "Host(`vector.pesallaccia.com`) || PathPrefix(`/vector-standalone`)"
@@ -311,6 +329,21 @@ http:
       priority: 100
       entryPoints: [web]
       service: odoo-18-local-svc
+      middlewares: [secure-headers]
+
+    # ===================== ODOO 14 PROVECCHIO (CENTOS 192.168.69.246) =====================
+    odoo14-provecchio:
+      rule: "Host(`odoo14.provecchio.local`) || Host(`odoo14.provecchio.com`)"
+      priority: 100
+      entryPoints: [websecure]
+      tls: {}
+      service: odoo14-provecchio-svc
+      middlewares: [secure-headers]
+    odoo14-provecchio-http:
+      rule: "Host(`odoo14.provecchio.local`) || Host(`odoo14.provecchio.com`)"
+      priority: 100
+      entryPoints: [web]
+      service: odoo14-provecchio-svc
       middlewares: [secure-headers]
 
     # ===================== DEMO ODOO =====================
@@ -654,7 +687,7 @@ http:
     omnibi-standalone-svc:
       loadBalancer:
         servers:
-          - url: "http://orderflow_omnibi_standalone:3028"
+          - url: "http://orderflow_omnibi_standalone:3027"
     axon-local-svc:
       loadBalancer:
         servers:
@@ -671,6 +704,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://odoo_web_18:8069"
+    odoo14-provecchio-svc:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.69.246:80"
     agripar-demo-svc:
       loadBalancer:
         servers:
