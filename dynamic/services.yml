@@ -647,11 +647,11 @@ http:
     orderflow-prod-frontend:
       loadBalancer:
         servers:
-          - url: "http://orderflow-frontend-prod:80"
+          - url: "http://orderflow_frontend:80"
     orderflow-prod-backend:
       loadBalancer:
         servers:
-          - url: "http://orderflow-backend-prod:3010"
+          - url: "http://orderflow_backend:3010"
     orderflow-prod-odoo:
       loadBalancer:
         servers:
@@ -659,11 +659,11 @@ http:
     orderflow-staging-frontend:
       loadBalancer:
         servers:
-          - url: "http://orderflow-frontend-prod:80"
+          - url: "http://orderflow_frontend:80"
     orderflow-staging-backend:
       loadBalancer:
         servers:
-          - url: "http://orderflow-backend-prod:3010"
+          - url: "http://orderflow_backend:3010"
     axon-prod:
       loadBalancer:
         servers:
