@@ -332,15 +332,33 @@ http:
       middlewares: [secure-headers]
 
     # ===================== ODOO 14 PROVECCHIO (CENTOS 192.168.69.246) =====================
+    # Producción (.com): certificado válido de Let's Encrypt via DNS-01 (Cloudflare).
+    # El router NO puede mezclar `.com` y `.local` en el mismo bloque: Let's Encrypt no
+    # puede emitir para un TLD interno y Traefik aborta la emisión completa. Por eso
+    # `.local` (solo intranet, sin DNS público) va en un router aparte con `tls: {}`.
     odoo14-provecchio:
-      rule: "Host(`odoo14.provecchio.local`) || Host(`odoo14.provecchio.com`)"
+      rule: "Host(`odoo14.provecchio.com`)"
+      priority: 100
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      service: odoo14-provecchio-svc
+      middlewares: [secure-headers]
+    odoo14-provecchio-http:
+      rule: "Host(`odoo14.provecchio.com`)"
+      priority: 100
+      entryPoints: [web]
+      service: odoo14-provecchio-svc
+      middlewares: [secure-headers]
+    odoo14-provecchio-local:
+      rule: "Host(`odoo14.provecchio.local`)"
       priority: 100
       entryPoints: [websecure]
       tls: {}
       service: odoo14-provecchio-svc
       middlewares: [secure-headers]
-    odoo14-provecchio-http:
-      rule: "Host(`odoo14.provecchio.local`) || Host(`odoo14.provecchio.com`)"
+    odoo14-provecchio-local-http:
+      rule: "Host(`odoo14.provecchio.local`)"
       priority: 100
       entryPoints: [web]
       service: odoo14-provecchio-svc
