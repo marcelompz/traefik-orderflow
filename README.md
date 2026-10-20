@@ -13,6 +13,14 @@ los ecosistemas por `Host`.
 | `orderflow.pesallaccia.com`, `provecchio.com` | `orderflow-frontend-prod:80` (`/api`→`orderflow-backend-prod:3010`, `/webhook`→`orderflow-odoo-adapter-prod:3005`) |
 | `staging.provecchio.com` | `orderflow_frontend:80` |
 | `staging.aieer.pesallaccia.com` | `staging_frontend:80` (`/api`→`staging_backend:8000`) |
+| `odoo14.provecchio.com` | `192.168.69.246:80` (Nginx del host Odoo 14 → `127.0.0.1:8081` → contenedor `odoo_web_8081`) |
+| `odoo14.provecchio.local` | ídem, pero solo intranet: router aparte con `tls: {}` (auto-firmado) |
+
+> **Certificados:** `odoo14.provecchio.com` usa `certResolver: letsencrypt` (DNS-01 vía Cloudflare).
+> El router **no puede mezclar `.com` y `.local`** en el mismo bloque: Let's Encrypt no puede emitir
+> para un TLD interno y Traefik aborta la emisión completa, dejando el `TRAEFIK DEFAULT CERT`
+> (Firefox: `MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT`, y HSTS impide añadir la excepción).
+> Todo dominio `.local` va en su propio router con `tls: {}`.
 
 > Los contenedores de OrderFlow prod están caídos; darán 502 hasta levantarlos
 > (mismo estado actual). El resto funciona igual que con nginx.
